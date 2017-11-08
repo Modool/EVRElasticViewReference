@@ -1,2 +1,2 @@
-# BBLinkElasticViewReference
-BBLinkElasticViewReference for managing to drag view node.
+# EVRElasticViewReference
+EVRElasticViewReferencefor managing to drag view node.
