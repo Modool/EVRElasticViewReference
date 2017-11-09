@@ -27,7 +27,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		083D86B11FB4060A00A3CC5D /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0899E8571FB4377E00F25BAA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		089EEDB81FB30E9E00271960 /* EVRElasticViewReference.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EVRElasticViewReference.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		089EEDC61FB30F3C00271960 /* EVRElasticViewReference.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EVRElasticViewReference.m; sourceTree = "<group>"; };
 		089EEDC71FB30F3C00271960 /* EVRElasticViewReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EVRElasticViewReference.h; sourceTree = "<group>"; };
@@ -64,7 +64,7 @@
 		089EEDAE1FB30E9E00271960 = {
 			isa = PBXGroup;
 			children = (
-				083D86B11FB4060A00A3CC5D /* Info.plist */,
+				0899E8571FB4377E00F25BAA /* Info.plist */,
 				089EEDC51FB30F3C00271960 /* EVRElasticViewReference */,
 				089EEDD01FB30FC200271960 /* Demo */,
 				089EEDB91FB30E9E00271960 /* Products */,

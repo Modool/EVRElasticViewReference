@@ -14,6 +14,8 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 
 @interface EVRElasticViewReference ()
 
+@property (nonatomic, weak) id<EVRElasticViewReferenceDelegate> delegate;
+
 @property (nonatomic, strong) UIView *referencedView;
 
 @property (nonatomic, strong) UIView *referencedSnapshotView;
@@ -31,8 +33,6 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
-
-@property (nonatomic, weak) id<EVRElasticViewReferenceDelegate> delegate;
 
 @property (nonatomic, strong, readonly) UIWindow *window;
 

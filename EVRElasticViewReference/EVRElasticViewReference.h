@@ -32,6 +32,8 @@ typedef NS_ENUM(NSUInteger, EVRElasticViewReferenceState) {
 
 @interface EVRElasticViewReference : NSObject
 
+@property (nonatomic, weak, readonly) id<EVRElasticViewReferenceDelegate> delegate;
+
 @property (nonatomic, strong, readonly) UIView *referencedView;
 
 @property (nonatomic, assign, readonly, getter=isDragging) BOOL drag;
