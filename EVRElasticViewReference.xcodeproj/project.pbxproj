@@ -27,6 +27,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		083D86B11FB4060A00A3CC5D /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		089EEDB81FB30E9E00271960 /* EVRElasticViewReference.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = EVRElasticViewReference.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		089EEDC61FB30F3C00271960 /* EVRElasticViewReference.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EVRElasticViewReference.m; sourceTree = "<group>"; };
 		089EEDC71FB30F3C00271960 /* EVRElasticViewReference.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EVRElasticViewReference.h; sourceTree = "<group>"; };
@@ -40,7 +41,6 @@
 		089EEDE01FB30FC200271960 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		089EEDE91FB3113900271960 /* TestTableViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestTableViewCell.h; sourceTree = "<group>"; };
 		089EEDEA1FB3113900271960 /* TestTableViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestTableViewCell.m; sourceTree = "<group>"; };
-		08BBFCD81FB3F4C400E3F6F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = EVRElasticViewReference/Info.plist; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +64,7 @@
 		089EEDAE1FB30E9E00271960 = {
 			isa = PBXGroup;
 			children = (
+				083D86B11FB4060A00A3CC5D /* Info.plist */,
 				089EEDC51FB30F3C00271960 /* EVRElasticViewReference */,
 				089EEDD01FB30FC200271960 /* Demo */,
 				089EEDB91FB30E9E00271960 /* Products */,
@@ -82,7 +83,6 @@
 		089EEDC51FB30F3C00271960 /* EVRElasticViewReference */ = {
 			isa = PBXGroup;
 			children = (
-				08BBFCD81FB3F4C400E3F6F9 /* Info.plist */,
 				089EEDC71FB30F3C00271960 /* EVRElasticViewReference.h */,
 				089EEDC61FB30F3C00271960 /* EVRElasticViewReference.m */,
 			);
@@ -361,7 +361,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "$(SRCROOT)/EVRElasticViewReference/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -381,7 +381,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				INFOPLIST_FILE = "$(SRCROOT)/EVRElasticViewReference/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
