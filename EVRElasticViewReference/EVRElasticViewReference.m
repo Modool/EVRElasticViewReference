@@ -177,9 +177,7 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     if (!layer) return;
     
     [[[self window] layer] addSublayer:layer];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [layer removeFromSuperlayer];
-    });    
+    [layer performSelector:@selector(removeFromSuperlayer) withObject:nil afterDelay:duration];
 }
 
 - (void)_resumeSnapView{

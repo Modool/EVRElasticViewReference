@@ -54,7 +54,7 @@
 }
 
 - (CGFloat)elasticViewReference:(EVRElasticViewReference *)reference completedAnimationDurationWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    return .5f;
+    return .2f;
 }
 
 - (CALayer *)elasticViewReference:(EVRElasticViewReference *)reference completedAnimationLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
@@ -73,9 +73,11 @@
 
     CAEmitterLayer *emitterLayer = [CAEmitterLayer layer];
     emitterLayer.frame = (CGRect){0, 0, size};
+    emitterLayer.renderMode = kCAEmitterLayerAdditive;
+    
     emitterLayer.emitterPosition = location;
     emitterLayer.emitterSize = CGSizeMake(size.width / 2., size.height / 2.);
-    emitterLayer.renderMode = kCAEmitterLayerAdditive;
+    
     emitterLayer.emitterCells = @[emitterCell];
     
     return emitterLayer;
@@ -91,5 +93,8 @@
     }
 }
 
+- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag;{
+    
+}
 
 @end
