@@ -22,6 +22,8 @@
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier{
     if (self = [super initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdentifier]) {
+        self.selectionStyle = UITableViewCellSelectionStyleNone;
+        
         self.contentLabel = [UILabel new];
         
         self.contentLabel.textColor = [UIColor whiteColor];
@@ -34,6 +36,7 @@
         [[self contentView] addSubview:[self contentLabel]];
         
         self.reference = [EVRElasticViewReference referenceWithReferencedView:[self contentLabel] delegate:self];
+        self.reference.allowTapping = YES;
     }
     return self;
 }
@@ -49,7 +52,6 @@
 }
 
 - (BOOL)elasticViewReference:(EVRElasticViewReference *)reference allowCompleteWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    
     return sqrt((pow(translation.x, 2) + pow(translation.y, 2))) > 200;
 }
 
@@ -90,6 +92,10 @@
         case EVRElasticViewReferenceStateCompleted: NSLog(@"state update: complete"); break;
         case EVRElasticViewReferenceStateCancel: NSLog(@"state update: cancel"); break;
         default: break;
+    }
+    
+    if (state == EVRElasticViewReferenceStateCompleted) {
+        self.contentLabel.hidden = YES;
     }
 }
 

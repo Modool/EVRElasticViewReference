@@ -9,12 +9,13 @@
 #import "EVRElasticViewReference.h"
 
 const CGFloat EVRElasticViewReferenceMaxDistance = 100.f;
-
 const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 
 @interface EVRElasticViewReference ()
 
 @property (nonatomic, weak) id<EVRElasticViewReferenceDelegate> delegate;
+
+@property (nonatomic, assign) EVRElasticViewReferenceState state;
 
 @property (nonatomic, strong) UIView *referencedView;
 
@@ -24,17 +25,11 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 
 @property (nonatomic, strong) CAShapeLayer *originLayer;
 
-@property (nonatomic, assign, getter=isDragging) BOOL drag;
-
-@property (nonatomic, assign) BOOL allowTapping;
-
-@property (nonatomic, assign) BOOL allowDragging;
-
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
 
-@property (nonatomic, strong, readonly) UIWindow *window;
+@property (nonatomic, assign, getter=isDragging) BOOL dragging;
 
 @end
 
@@ -44,23 +39,17 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     return [[self alloc] initWithReferencedView:referencedView delegate:delegate];
 }
 
+- (instancetype)init{
+    return [self initWithReferencedView:nil delegate:nil];
+}
+
 - (instancetype)initWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate;{
-    NSParameterAssert(referencedView);
-    
-    return [self initWithReferencedView:referencedView allowDragging:YES allowTapping:NO delegate:delegate];
-}
-
-+ (instancetype)referenceWithReferencedView:(UIView *)referencedView allowDragging:(BOOL)allowDragging allowTapping:(BOOL)allowTapping delegate:(id<EVRElasticViewReferenceDelegate>)delegate;{
-    return [[self alloc] initWithReferencedView:referencedView allowDragging:allowTapping allowTapping:allowTapping delegate:delegate];
-}
-
-- (instancetype)initWithReferencedView:(UIView *)referencedView allowDragging:(BOOL)allowDragging allowTapping:(BOOL)allowTapping delegate:(id<EVRElasticViewReferenceDelegate>)delegate {
     NSParameterAssert(referencedView);
     if (self = [super init]) {
         self.delegate = delegate;
-        self.allowDragging = allowDragging;
-        self.allowTapping = allowTapping;
         self.referencedView = referencedView;
+        
+        self.allowDragging = YES;
         
         [self initialize];
     }
@@ -68,24 +57,28 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 }
 
 - (void)initialize;{
+    self.canceledDuration = EVRElasticViewReferenceAnimationDuration;
     self.tintColor = [[self referencedView] backgroundColor];
     self.referencedView.userInteractionEnabled = YES;
     
-    if ([self allowTapping]) {
-        self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didTapInReferencedView:)];
-        
-        [[self referencedView] addGestureRecognizer:[self tapGestureRecognizer]];
-    }
-    if ([self allowDragging]) {
-        self.panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(didPanInReferencedView:)];
-        
-        [[self referencedView] addGestureRecognizer:[self panGestureRecognizer]];
-    }
+    self.tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(didTapInReferencedView:)];
+    self.tapGestureRecognizer.enabled = [self allowTapping];
+    
+    [[self referencedView] addGestureRecognizer:[self tapGestureRecognizer]];
+    
+    self.panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(didPanInReferencedView:)];
+    self.panGestureRecognizer.enabled = [self allowDragging];
+    
+    [[self referencedView] addGestureRecognizer:[self panGestureRecognizer]];
 }
 
 - (void)dealloc{
-    [[self referencedView] removeGestureRecognizer:[self tapGestureRecognizer]];
-    [[self referencedView] removeGestureRecognizer:[self panGestureRecognizer]];
+    if ([self tapGestureRecognizer]) {
+        [[self referencedView] removeGestureRecognizer:[self tapGestureRecognizer]];
+    }
+    if ([self panGestureRecognizer]) {
+        [[self referencedView] removeGestureRecognizer:[self panGestureRecognizer]];
+    }
     
     [self _removeSnapView];
     [self _removeDampingLayer];
@@ -93,11 +86,26 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 
 #pragma mark - accessor
 
-- (UIWindow *)window{
-    return [[[UIApplication sharedApplication] delegate] window];
+- (UIView *)attchedView{
+    if (!_attchedView) {
+        _attchedView = [[UIApplication sharedApplication] keyWindow];
+    }
+    return _attchedView;
 }
 
-- (CGFloat)fromRadiusWithTranlation:(CGPoint)translation{
+- (void)setAllowTapping:(BOOL)allowTapping{
+    _allowTapping = allowTapping;
+    
+    self.tapGestureRecognizer.enabled = allowTapping;
+}
+
+- (void)setAllowDragging:(BOOL)allowDragging{
+    _allowDragging = allowDragging;
+    
+    self.panGestureRecognizer.enabled = allowDragging;
+}
+
+- (CGFloat)fromRadius{
     CGSize size = self.referencedView.bounds.size;
     return MIN(size.width, size.height) / 2.0f;
 }
@@ -107,8 +115,16 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     return MIN(size.width, size.height) / 2.0f;
 }
 
+- (CGPoint)referenceViewCenter{
+    return (CGPoint){CGRectGetMidX([[self referencedView] bounds]), CGRectGetMidY([[self referencedView] bounds])};
+}
+
 - (CGPoint)pointFromConvertPoint:(CGPoint)point{
-    return [[self referencedView] convertPoint:point toView:[self window]];
+    return [[self referencedView] convertPoint:point toView:[self attchedView]];
+}
+
+- (CGFloat)distanceFromTranslation:(CGPoint)translation{
+    return sqrt(pow(translation.x, 2) + pow(translation.y, 2));
 }
 
 - (CAShapeLayer *)newLayer{
@@ -121,17 +137,14 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 #pragma mark - private
 
 - (void)_willBeginDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
-    self.drag = YES;
-    
     [self _resumeDampingLayer];
     [self _resumeSnapView];
+    [self _updateState:EVRElasticViewReferenceStateBegin];
     
     [self _updateContentWithLocation:location translation:translation velocity:velocity];
 }
 
 - (void)_didEndDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
-    self.drag = NO;
-    
     if ([self _allowCompleteWithLocation:location translation:translation velocity:velocity]) {
         [self _completeWithLocation:location translation:translation velocity:velocity];
     } else {
@@ -140,43 +153,37 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 }
 
 - (void)_didCancelDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation{
-    self.drag = NO;
-    
     [self _cancel];
 }
 
 - (void)_updateLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    self.drag = YES;
-    
     if ([self _allowDampingWithLocation:location translation:translation velocity:velocity]) {
-        if (![self dampingLayer]) {
-            [self _resumeDampingLayer];
-        }
+        if (![self dampingLayer]) [self _resumeDampingLayer];
     } else {
         [self _destroyDampingLayer];
     }
     
     [self _updateContentWithLocation:location translation:translation velocity:velocity];
-    [self _respondDelegateForUpdatingState:EVRElasticViewReferenceStateMoving];
+    [self _updateState:EVRElasticViewReferenceStateMoving];
 }
 
 - (void)_completeWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
     [self _destroyContentWithLocation:location translation:translation velocity:velocity];
-    [self _respondDelegateForUpdatingState:EVRElasticViewReferenceStateCompleted];
+    [self _updateState:EVRElasticViewReferenceStateCompleted];
 }
 
 - (void)_cancel;{
     [self _resume];
-    [self _respondDelegateForUpdatingState:EVRElasticViewReferenceStateCancel];
+    [self _updateState:EVRElasticViewReferenceStateCancel];
 }
 
 - (void)_prepareCompletLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
-    CALayer *layer = [self completedAnimationLayerWithLocation:location translation:translation velocity:velocity];
-    CGFloat duration = [self completedAnimationDurationWithLocation:location translation:translation velocity:velocity];
+    CALayer *layer = [self _completedAnimationLayerWithLocation:location translation:translation velocity:velocity];
+    CGFloat duration = [self _completedAnimationDurationWithLocation:location translation:translation velocity:velocity];
     
     if (!layer) return;
     
-    [[[self window] layer] addSublayer:layer];
+    [[[self attchedView] layer] addSublayer:layer];
     [layer performSelector:@selector(removeFromSuperlayer) withObject:nil afterDelay:duration];
 }
 
@@ -186,7 +193,7 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     self.referencedSnapshotView = [[self referencedView] snapshotViewAfterScreenUpdates:NO];
     self.referencedView.hidden = YES;
     
-    [[self window] addSubview:[self referencedSnapshotView]];
+    [[self attchedView] addSubview:[self referencedSnapshotView]];
 }
 
 - (void)_removeSnapView{
@@ -218,11 +225,11 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     self.dampingLayer = [self newLayer];
     
     if ([self referencedSnapshotView]) {
-        [[[self window] layer] insertSublayer:[self originLayer] below:[[self referencedSnapshotView] layer]];
-        [[[self window] layer] insertSublayer:[self dampingLayer] below:[[self referencedSnapshotView] layer]];
+        [[[self attchedView] layer] insertSublayer:[self originLayer] below:[[self referencedSnapshotView] layer]];
+        [[[self attchedView] layer] insertSublayer:[self dampingLayer] below:[[self referencedSnapshotView] layer]];
     } else {
-        [[[self window] layer] addSublayer:[self originLayer]];
-        [[[self window] layer] addSublayer:[self dampingLayer]];
+        [[[self attchedView] layer] addSublayer:[self originLayer]];
+        [[[self attchedView] layer] addSublayer:[self dampingLayer]];
     }
 }
 
@@ -243,12 +250,15 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 - (void)_resumeWithCompletion:(void (^)(void))completion{
     [self _removeDampingLayer];
     
-    CGPoint from = [self pointFromConvertPoint:CGPointMake(CGRectGetWidth([[self referencedView] frame]) / 2., CGRectGetHeight([[self referencedView] frame]) / 2.)];
-
-    [UIView animateWithDuration:EVRElasticViewReferenceAnimationDuration delay:0 usingSpringWithDamping:0.2 initialSpringVelocity:0 options:UIViewAnimationOptionCurveLinear animations:^{
+    CGPoint from = [self pointFromConvertPoint:[self referenceViewCenter]];
+    CGFloat duration = [self canceledDuration];
+    
+    [UIView animateWithDuration:duration delay:0 usingSpringWithDamping:0.2 initialSpringVelocity:0 options:UIViewAnimationOptionCurveLinear animations:^{
         self.referencedSnapshotView.center = from;
     } completion:^(BOOL finished) {
         [self _removeSnapView];
+        
+        if (completion) completion();
     }];
 }
 
@@ -259,28 +269,32 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 }
 
 - (void)_updateLayersPathWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity {
-    CGFloat distance = sqrt(pow(translation.x, 2) + pow(translation.y, 2));
+    CGFloat distance = [self distanceFromTranslation:translation];
     
     CGFloat sine = translation.x / distance;
     CGFloat cosine = translation.y / distance;
     CGFloat angle = asin(sine);
     
-    CGFloat fromRadius = [self fromRadiusWithTranlation:translation] * MAX(0.3, (1 - distance / EVRElasticViewReferenceMaxDistance));
+    CGFloat fromRadius = [self fromRadius] * MAX(0.3, (1 - distance / EVRElasticViewReferenceMaxDistance));
     CGFloat toRadius = [self toRadius];
     
-    CGPoint fromCenter = [self pointFromConvertPoint:CGPointMake(CGRectGetWidth([[self referencedView] frame]) / 2., CGRectGetHeight([[self referencedView] frame]) / 2.)];
+    CGPoint fromCenter = [self pointFromConvertPoint:[self referenceViewCenter]];
     CGPoint toCenter = location;
     
+    // The two points of tangency of referenced view.
     CGPoint fromPoint1 = CGPointMake(fromCenter.x - fromRadius * cosine, fromCenter.y + fromRadius * sine);
     CGPoint fromPoint2 = CGPointMake(fromCenter.x + fromRadius * cosine, fromCenter.y - fromRadius * sine);
     
+    // The two points of tangency of referenced snapshot view.
     CGPoint toPoint1 = CGPointMake(toCenter.x - toRadius * cosine, toCenter.y + toRadius * sine);
     CGPoint toPoint2 = CGPointMake(toCenter.x + toRadius * cosine, toCenter.y - toRadius * sine);
     
+    // The two points of tangency of curve lines.
     CGPoint controlPoint1 = CGPointMake(fromPoint1.x + (distance / 2) * sine, fromPoint1.y + (distance / 2) * cosine);
     CGPoint controlPoint2 = CGPointMake(fromPoint2.x + (distance / 2) * sine, fromPoint2.y + (distance / 2) * cosine);
     
     UIBezierPath *dampingLayerPath = [UIBezierPath bezierPath];
+    // Add two curve lines to align both referenced view and referenced snapshot view.
     [dampingLayerPath moveToPoint:fromPoint1];
     [dampingLayerPath addLineToPoint:fromPoint2];
     [dampingLayerPath addQuadCurveToPoint:toPoint2 controlPoint:controlPoint2];
@@ -290,62 +304,70 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
     self.dampingLayer.path = [dampingLayerPath CGPath];
     
     UIBezierPath *originLayerPath = [UIBezierPath bezierPath];
+    // The origin view replaced by an circle layer, scaled by disitance.
     [originLayerPath addArcWithCenter:fromCenter radius:fromRadius startAngle:angle endAngle:(M_PI * 2 + angle) clockwise:YES];
     
     self.originLayer.path = [originLayerPath CGPath];
 }
 
+- (void)_updateState:(EVRElasticViewReferenceState)state{
+    self.state = state;
+    self.dragging = (state == EVRElasticViewReferenceStateBegin || state == EVRElasticViewReferenceStateMoving);
+    
+    [self _respondDelegateForUpdatingState:state];
+}
+
 - (BOOL)_allowDampingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    if ([[self delegate] respondsToSelector:@selector(elasticViewReference:allowDampingWithLocation:translation:velocity:)]) {
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(elasticViewReference:allowDampingWithLocation:translation:velocity:)]) {
         return [[self delegate] elasticViewReference:self allowDampingWithLocation:location translation:translation velocity:velocity];
     }
-    return (sqrt(pow(translation.x, 2) + pow(translation.y, 2)) < EVRElasticViewReferenceMaxDistance);
+    return [self distanceFromTranslation:translation] < EVRElasticViewReferenceMaxDistance;
 }
 
 - (BOOL)_allowCompleteWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    if ([[self delegate] respondsToSelector:@selector(elasticViewReference:allowCompleteWithLocation:translation:velocity:)]) {
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(elasticViewReference:allowCompleteWithLocation:translation:velocity:)]) {
         return [[self delegate] elasticViewReference:self allowCompleteWithLocation:location translation:translation velocity:velocity];
     }
-    return (sqrt(pow(translation.x, 2) + pow(translation.y, 2)) > EVRElasticViewReferenceMaxDistance);
+    return [self distanceFromTranslation:translation] > EVRElasticViewReferenceMaxDistance;
 }
 
-- (CGFloat)completedAnimationDurationWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    if ([[self delegate] respondsToSelector:@selector(elasticViewReference:completedAnimationDurationWithLocation:translation:velocity:)]) {
+- (CGFloat)_completedAnimationDurationWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(elasticViewReference:completedAnimationDurationWithLocation:translation:velocity:)]) {
         return [[self delegate] elasticViewReference:self completedAnimationDurationWithLocation:location translation:translation velocity:velocity];
     }
     return EVRElasticViewReferenceAnimationDuration;
 }
 
-- (CALayer *)completedAnimationLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
-    if ([[self delegate] respondsToSelector:@selector(elasticViewReference:completedAnimationLayerWithLocation:translation:velocity:)]) {
+- (CALayer *)_completedAnimationLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(elasticViewReference:completedAnimationLayerWithLocation:translation:velocity:)]) {
         return [[self delegate] elasticViewReference:self completedAnimationLayerWithLocation:location translation:translation velocity:velocity];
     }
     return nil;
 }
 
 - (void)_respondDelegateForUpdatingState:(EVRElasticViewReferenceState)state{
-    if ([[self delegate] respondsToSelector:@selector(elasticViewReference:didUpdateState:)]) {
+    if ([self delegate] && [[self delegate] respondsToSelector:@selector(elasticViewReference:didUpdateState:)]) {
         [[self delegate] elasticViewReference:self didUpdateState:state];
     }
 }
 
 #pragma mark - actions
 
-- (IBAction)didTapInReferencedView:(UITapGestureRecognizer *)sender{
-    if ([sender state] == UIGestureRecognizerStateEnded) {
-        CGPoint location = [self pointFromConvertPoint:CGPointMake(CGRectGetWidth([[self referencedView] frame]) / 2., CGRectGetHeight([[self referencedView] frame]) / 2.)];
-        [self _completeWithLocation:location translation:CGPointZero velocity:CGPointZero];
-    }
+- (IBAction)didTapInReferencedView:(UITapGestureRecognizer *)tapGestureRecognizer{
+    if ([tapGestureRecognizer state] != UIGestureRecognizerStateEnded) return;
+    
+    CGPoint location = [self pointFromConvertPoint:[self referenceViewCenter]];
+    [self _completeWithLocation:location translation:CGPointZero velocity:CGPointZero];
 }
 
-- (IBAction)didPanInReferencedView:(UIPanGestureRecognizer *)sender{
-    CGPoint location = [sender locationInView:[self referencedView]];
-    CGPoint translation = [sender translationInView:[self referencedView]];
-    CGPoint velocity = [sender velocityInView:[self referencedView]];
+- (IBAction)didPanInReferencedView:(UIPanGestureRecognizer *)panGestureRecognizer{
+    CGPoint location = [panGestureRecognizer locationInView:[self referencedView]];
+    CGPoint translation = [panGestureRecognizer translationInView:[self referencedView]];
+    CGPoint velocity = [panGestureRecognizer velocityInView:[self referencedView]];
     
     location = [self pointFromConvertPoint:location];
     
-    switch ([sender state]) {
+    switch ([panGestureRecognizer state]) {
         case UIGestureRecognizerStateBegan: [self _willBeginDraggingWithLocation:location translation:translation velocity:velocity]; break;
         case UIGestureRecognizerStateChanged: [self _updateLocation:location translation:translation velocity:velocity]; break;
         case UIGestureRecognizerStateEnded: [self _didEndDraggingWithLocation:location translation:translation velocity:velocity]; break;

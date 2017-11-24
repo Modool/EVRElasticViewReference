@@ -16,7 +16,6 @@ typedef NS_ENUM(NSUInteger, EVRElasticViewReferenceState) {
 };
 
 @class EVRElasticViewReference;
-
 @protocol EVRElasticViewReferenceDelegate <NSObject>
 
 @optional
@@ -30,30 +29,36 @@ typedef NS_ENUM(NSUInteger, EVRElasticViewReferenceState) {
 
 @end
 
+UIKIT_EXTERN const CGFloat EVRElasticViewReferenceMaxDistance;
+UIKIT_EXTERN const CGFloat EVRElasticViewReferenceAnimationDuration;
+
 @interface EVRElasticViewReference : NSObject
 
 @property (nonatomic, weak, readonly) id<EVRElasticViewReferenceDelegate> delegate;
 
+@property (nonatomic, assign, readonly) EVRElasticViewReferenceState state;
+
 @property (nonatomic, strong, readonly) UIView *referencedView;
 
-@property (nonatomic, assign, readonly, getter=isDragging) BOOL drag;
+@property (nonatomic, assign, readonly, getter=isDragging) BOOL dragging;
 
 // Default is YES
-@property (nonatomic, assign, readonly) BOOL allowTapping;
+@property (nonatomic, assign) BOOL allowTapping;
 
 // Default is NO
-@property (nonatomic, assign, readonly) BOOL allowDragging;
+@property (nonatomic, assign) BOOL allowDragging;
+
+// Default is EVRElasticViewReferenceAnimationDuration.
+@property (nonatomic, assign) CGFloat canceledDuration;
 
 // Default is background color of referenced view.
 @property (nonatomic, strong) UIColor *tintColor;
 
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
+// Attached background view, default is the key window.
+@property (nonatomic, strong) UIView *attchedView;
 
+// The default allowDragging is YES, allowTapping is NO;
 + (instancetype)referenceWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate;
-- (instancetype)initWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate;
-
-+ (instancetype)referenceWithReferencedView:(UIView *)referencedView allowDragging:(BOOL)allowDragging allowTapping:(BOOL)allowTapping delegate:(id<EVRElasticViewReferenceDelegate>)delegate;
-- (instancetype)initWithReferencedView:(UIView *)referencedView allowDragging:(BOOL)allowDragging allowTapping:(BOOL)allowTapping delegate:(id<EVRElasticViewReferenceDelegate>)delegate NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate NS_DESIGNATED_INITIALIZER;
 
 @end
