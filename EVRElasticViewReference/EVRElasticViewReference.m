@@ -137,6 +137,8 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 #pragma mark - private
 
 - (void)_willBeginDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
+    self.dragging = YES;
+    
     [self _resumeDampingLayer];
     [self _resumeSnapView];
     [self _updateState:EVRElasticViewReferenceStateBegin];
@@ -145,6 +147,8 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 }
 
 - (void)_didEndDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
+    self.dragging = NO;
+    
     if ([self _allowCompleteWithLocation:location translation:translation velocity:velocity]) {
         [self _completeWithLocation:location translation:translation velocity:velocity];
     } else {
@@ -153,6 +157,8 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 }
 
 - (void)_didCancelDraggingWithLocation:(CGPoint)location translation:(CGPoint)translation{
+    self.dragging = NO;
+    
     [self _cancel];
 }
 
@@ -170,11 +176,13 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 - (void)_completeWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;{
     [self _destroyContentWithLocation:location translation:translation velocity:velocity];
     [self _updateState:EVRElasticViewReferenceStateCompleted];
+    [self _updateState:EVRElasticViewReferenceStateNone];
 }
 
 - (void)_cancel;{
     [self _resume];
     [self _updateState:EVRElasticViewReferenceStateCancel];
+    [self _updateState:EVRElasticViewReferenceStateNone];
 }
 
 - (void)_prepareCompletLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity{
@@ -312,7 +320,6 @@ const CGFloat EVRElasticViewReferenceAnimationDuration = .5f;
 
 - (void)_updateState:(EVRElasticViewReferenceState)state{
     self.state = state;
-    self.dragging = (state == EVRElasticViewReferenceStateBegin || state == EVRElasticViewReferenceStateMoving);
     
     [self _respondDelegateForUpdatingState:state];
 }

@@ -37,6 +37,7 @@
         
         self.reference = [EVRElasticViewReference referenceWithReferencedView:[self contentLabel] delegate:self];
         self.reference.allowTapping = YES;
+        self.reference.allowDragging = YES;
     }
     return self;
 }
@@ -91,6 +92,7 @@
         case EVRElasticViewReferenceStateMoving: NSLog(@"state update: moving"); break;
         case EVRElasticViewReferenceStateCompleted: NSLog(@"state update: complete"); break;
         case EVRElasticViewReferenceStateCancel: NSLog(@"state update: cancel"); break;
+        case EVRElasticViewReferenceStateNone: NSLog(@"state update: none"); break;
         default: break;
     }
     

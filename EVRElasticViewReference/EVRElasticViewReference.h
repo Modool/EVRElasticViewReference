@@ -9,28 +9,35 @@
 #import <UIKit/UIKit.h>
 
 typedef NS_ENUM(NSUInteger, EVRElasticViewReferenceState) {
-    EVRElasticViewReferenceStateBegin = 0,
+    EVRElasticViewReferenceStateNone = 0,
+    EVRElasticViewReferenceStateBegin,
     EVRElasticViewReferenceStateMoving,
     EVRElasticViewReferenceStateCompleted,
     EVRElasticViewReferenceStateCancel,
 };
 
+UIKIT_EXTERN const CGFloat EVRElasticViewReferenceMaxDistance;
+UIKIT_EXTERN const CGFloat EVRElasticViewReferenceAnimationDuration;
+
 @class EVRElasticViewReference;
 @protocol EVRElasticViewReferenceDelegate <NSObject>
 
 @optional
+// Default is distance < EVRElasticViewReferenceMaxDistance.
 - (BOOL)elasticViewReference:(EVRElasticViewReference *)reference allowDampingWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;
+
+// Default is distance > EVRElasticViewReferenceMaxDistance.
 - (BOOL)elasticViewReference:(EVRElasticViewReference *)reference allowCompleteWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;
 
+// Default is distance < EVRElasticViewReferenceAnimationDuration.
 - (CGFloat)elasticViewReference:(EVRElasticViewReference *)reference completedAnimationDurationWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;
+
+// The referencedView will resume without animation if return nil.
 - (CALayer *)elasticViewReference:(EVRElasticViewReference *)reference completedAnimationLayerWithLocation:(CGPoint)location translation:(CGPoint)translation velocity:(CGPoint)velocity;
 
 - (void)elasticViewReference:(EVRElasticViewReference *)reference didUpdateState:(EVRElasticViewReferenceState)state;
 
 @end
-
-UIKIT_EXTERN const CGFloat EVRElasticViewReferenceMaxDistance;
-UIKIT_EXTERN const CGFloat EVRElasticViewReferenceAnimationDuration;
 
 @interface EVRElasticViewReference : NSObject
 
@@ -57,7 +64,6 @@ UIKIT_EXTERN const CGFloat EVRElasticViewReferenceAnimationDuration;
 // Attached background view, default is the key window.
 @property (nonatomic, strong) UIView *attchedView;
 
-// The default allowDragging is YES, allowTapping is NO;
 + (instancetype)referenceWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate;
 - (instancetype)initWithReferencedView:(UIView *)referencedView delegate:(id<EVRElasticViewReferenceDelegate>)delegate NS_DESIGNATED_INITIALIZER;
 
